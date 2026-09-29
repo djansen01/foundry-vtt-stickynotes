@@ -3,13 +3,14 @@
 # Run from your own machine, where your GitHub credentials live.
 set -euo pipefail
 
-REMOTE="git@github.com:djansen01/foundry-vtt-stickynotes.git"   # swap to https:// if you prefer
+REMOTE="https://github.com/djansen01/foundry-vtt-stickynotes.git"   # HTTPS: Git Credential Manager handles sign-in
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
 
 VERSION=$(python3 -c "import json;print(json.load(open('module.json'))['version'])")
 
-git remote get-url origin >/dev/null 2>&1 || git remote add origin "$REMOTE"
+# always (re)point origin at the real GitHub URL, whatever it was set to before
+git remote get-url origin >/dev/null 2>&1 && git remote set-url origin "$REMOTE" || git remote add origin "$REMOTE"
 echo "==> pushing main to $(git remote get-url origin)"
 git push -u origin main
 
