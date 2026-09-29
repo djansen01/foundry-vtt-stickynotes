@@ -1,0 +1,186 @@
+/* Sticky Notes */
+
+/* --- HUD button --- */
+.sn-hud-button.sn-has-note {
+  color: #2b2b2b;
+  background: rgba(244, 211, 94, 0.85);
+  border-color: rgba(244, 211, 94, 0.95);
+}
+.sn-hud-button.sn-has-note:hover {
+  background: rgba(244, 211, 94, 1);
+}
+
+/* --- hover note --- */
+.sn-note {
+  --sn-c: #f4d35e;
+  position: fixed;
+  z-index: 70;
+  max-width: 300px;
+  min-width: 120px;
+  padding: 8px 10px 9px;
+  background: var(--sn-c);
+  color: #24211c;
+  border-radius: 2px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-primary, sans-serif);
+  font-size: 13px;
+  line-height: 1.35;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  /* a slightly lifted corner, so it reads as paper rather than a tooltip */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+.sn-note.sn-hidden { opacity: 0; }
+
+.sn-note-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
+}
+.sn-note-body { white-space: normal; word-break: break-word; }
+
+/* --- corner markers --- */
+.sn-marker-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+.sn-marker {
+  --sn-c: #f4d35e;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--sn-c);
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  border-radius: 2px 2px 2px 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* --- editor --- */
+.sticky-notes-editor .sn-form textarea { resize: vertical; min-height: 90px; font-family: var(--font-primary, sans-serif); }
+.sticky-notes-editor .sn-swatches { display: flex; gap: 8px; align-items: center; }
+.sn-swatch { position: relative; cursor: pointer; line-height: 0; }
+.sn-swatch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.sn-swatch span {
+  display: inline-block;
+  width: 24px; height: 24px;
+  background: var(--sn-c);
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+}
+.sn-swatch input:checked + span {
+  border-color: var(--color-text-hyperlink, #ff6400);
+  box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.35);
+}
+
+/* --- shared notes --- */
+.sn-hud-button.sn-has-shared {
+  background: rgba(142, 202, 230, 0.9);
+  border-color: rgba(142, 202, 230, 1);
+}
+.sn-stack {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.sn-stack.sn-hidden { opacity: 0; }
+.sn-stack .sn-note { position: static; }
+
+.sn-note-shared { box-shadow: 0 3px 10px rgba(0,0,0,.45), 0 0 0 2px rgba(45,110,150,.75); }
+.sn-note-by {
+  margin-top: 5px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0,0,0,.22);
+  font-size: 11px;
+  opacity: .75;
+}
+.sn-note-by i { margin-right: 3px; }
+
+.sn-marker-shared { border-radius: 50%; box-shadow: 0 0 0 2px rgba(45,110,150,.9), 0 1px 3px rgba(0,0,0,.5); }
+
+/* --- editor: scope selector ---
+   Foundry's standard-form right-aligns .form-fields content; these options read far better
+   left-justified in a single row with their radios lined up. */
+.sticky-notes-editor .sn-scope {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px 20px;
+  width: 100%;
+  text-align: left;
+}
+.sticky-notes-editor .sn-scope-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.sticky-notes-editor .sn-scope-opt input[type="radio"] {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.sticky-notes-editor .sn-scope-opt i { opacity: .75; }
+.sticky-notes-editor .sn-locked { margin: 0 0 8px; font-size: 12px; }
+
+/* --- free-placed map pins --- */
+.sn-marker-layer { pointer-events: none; }
+.sn-pin {
+  --sn-c: #f4d35e;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--sn-c);
+  text-shadow: 0 0 2px #000, 0 1px 3px rgba(0,0,0,.8);
+  transition: transform 90ms ease;
+}
+.sn-pin:hover { transform: translate(-50%, -100%) scale(1.18); }
+.sn-pin-shared::after {
+  content: "";
+  position: absolute;
+  right: -3px; bottom: 2px;
+  width: 7px; height: 7px;
+  background: #8ecae6;
+  border: 1px solid rgba(0,0,0,.6);
+  border-radius: 50%;
+}
+body.sn-placing #board { cursor: crosshair !important; }
+
+/* --- region note button (regions have no HUD) --- */
+.sn-region-btn {
+  --sn-c: #f4d35e;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  font-size: 15px;
+  background: rgba(20, 20, 24, .78);
+  border: 1px solid rgba(255, 255, 255, .28);
+  color: var(--sn-c);
+  box-shadow: 0 2px 6px rgba(0,0,0,.5);
+  transition: transform 90ms ease, background 90ms ease;
+}
+.sn-region-btn:hover { transform: translate(-50%, -50%) scale(1.18); background: rgba(20,20,24,.95); }
+.sn-region-btn.sn-empty { opacity: .45; color: #e8e6e2; }
+.sn-region-btn.sn-empty:hover { opacity: 1; }
+.sn-region-btn.sn-has-note { background: var(--sn-c); color: #241f14; border-color: rgba(0,0,0,.5); }
+.sn-region-btn.sn-shared { box-shadow: 0 2px 6px rgba(0,0,0,.5), 0 0 0 2px rgba(45,110,150,.9); }
+.sn-note-body p:first-child { margin-top: 0; }
+.sn-note-body p:last-child { margin-bottom: 0; }

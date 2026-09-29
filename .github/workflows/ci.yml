@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and manifest checks
+        run: |
+          node --check scripts/core.js
+          node --check scripts/main.js
+          python3 - <<'PY'
+          import json, sys
+          m = json.load(open("module.json"))
+          for key in ("id", "title", "version", "compatibility", "esmodules"):
+              assert key in m, f"module.json missing {key}"
+          assert m["esmodules"] == ["scripts/main.js"], "esmodules must point at the cache-busting loader"
+          json.load(open("lang/en.json"))
+          print("manifest ok:", m["id"], m["version"])
+          PY

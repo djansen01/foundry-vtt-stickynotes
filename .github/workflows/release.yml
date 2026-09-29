@@ -1,0 +1,63 @@
+# Publishes a release when you push a tag like `v1.8.0`.
+#
+# It rewrites version/manifest/download in module.json to match the tag, zips the module, and
+# attaches both module.zip and module.json to a GitHub Release. Foundry's installer reads the
+# `manifest` URL from the *latest release* asset, which is why both files are attached.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: v
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Stamp module.json
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          version = os.environ["VERSION"]
+          repo = os.environ["REPO"]
+          base = f"https://github.com/{repo}/releases"
+          with open("module.json") as f:
+              m = json.load(f)
+          m["version"] = version
+          m["manifest"] = f"{base}/latest/download/module.json"
+          m["download"] = f"{base}/download/v{version}/module.zip"
+          with open("module.json", "w") as f:
+              json.dump(m, f, indent=2)
+              f.write("\n")
+          print(json.dumps(m, indent=2))
+          PY
+
+      - name: Sanity-check the scripts
+        run: |
+          node --check scripts/core.js
+          node --check scripts/main.js
+          python3 -c "import json; json.load(open('module.json')); json.load(open('lang/en.json'))"
+
+      - name: Build module.zip
+        run: zip -r module.zip module.json scripts styles lang LICENSE README.md CHANGELOG.md
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          files: |
+            module.json
+            module.zip
