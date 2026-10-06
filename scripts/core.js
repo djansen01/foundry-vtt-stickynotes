@@ -646,30 +646,49 @@ function regionAnchor(region) {
   };
 }
 
-/** Which region is currently showing its note button, mirroring how a token HUD is summoned. */
-let activeRegionId = null;
+/**
+ * The placeable currently showing a summoned sticky-note button.
+ *
+ * Foundry only opens a HUD when `placeable._canHUD(user)` allows it: tokens need ownership,
+ * tiles need a GM, regions never have one. So a player right-clicking an NPC token gets no HUD at
+ * all, and the HUD button never appears. Instead, a right-click on anything that won't open a HUD
+ * summons our own small button beside it — the same pattern regions already used.
+ */
+let summoned = null;
 
-function setActiveRegion(id) {
-  if ( activeRegionId === id ) return;
-  activeRegionId = id;
+function setSummoned(p) {
+  if ( summoned === p ) return;
+  summoned = p;
   refreshMarkers();
 }
 
-/** Right-click a region to summon its button; left-click anywhere to dismiss it. */
+function hasHud(p, ev) {
+  if ( p?.document?.documentName === "Region" ) return false;
+  try { return !!p?._canHUD?.(game.user, ev); } catch { return false; }
+}
+
+/** Right-click (without dragging — right-drag pans) summons; left-click dismisses. */
 function installRegionClickHandlers() {
   const board = document.getElementById("board");
   if ( !board || board.dataset.snBound ) return;
   board.dataset.snBound = "1";
+  let down = null;
 
   board.addEventListener("pointerdown", ev => {
-    if ( !game.settings.get(MOD, "enabled") ) return;
-    if ( !canvas.regions?.active ) return;
-    if ( ev.button === 2 ) {
-      const region = (lastHovered?.document?.documentName === "Region") ? lastHovered : null;
-      setActiveRegion(region ? region.id : null);
-    } else if ( ev.button === 0 ) {
-      setActiveRegion(null);
-    }
+    if ( ev.button === 2 ) down = { x: ev.clientX, y: ev.clientY };
+    else if ( ev.button === 0 ) setSummoned(null);
+  }, { capture: true });
+
+  board.addEventListener("pointerup", ev => {
+    if ( ev.button !== 2 || !down ) return;
+    const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y);
+    down = null;
+    if ( moved > 6 || !game.settings.get(MOD, "enabled") ) return;
+    const target = hitTest(screenToWorld(ev));
+    if ( !target ) return setSummoned(null);
+    // a region only matters while its layer is showing; anything else is fair game
+    if ( target.document.documentName === "Region" && !canvas.regions?.active ) return setSummoned(null);
+    setSummoned(hasHud(target, ev) ? null : target);
   }, { capture: true });
 }
 
@@ -724,6 +743,8 @@ function hitTest(world, { notedOnly = false } = {}) {
     for ( const p of layer?.placeables ?? [] ) {
       const doc = p.document;
       if ( !doc ) continue;
+      // never react to things this user can't see — a hidden token must not leak its presence
+      if ( !game.user.isGM && (doc.hidden || (doc.documentName === "Token" && !p.visible)) ) continue;
       if ( notedOnly && !sharedFor(doc) && !privateFor(doc) ) continue;
       const b = boundsOf(p);
       if ( !b ) continue;
@@ -850,7 +871,7 @@ function refreshMarkers() {
     const priv = privateFor(region.document);
     const note = shared ?? priv;
     // summoned by right-click; or always, if the player prefers that
-    if ( !alwaysShow && region.id !== activeRegionId ) continue;
+    if ( !alwaysShow && summoned !== region ) continue;
     const c = regionAnchor(region);
     if ( !c ) continue;
     const el = document.createElement("div");
@@ -866,6 +887,27 @@ function refreshMarkers() {
     el.innerHTML = `<i class="fa-solid fa-note-sticky"></i>`;
     el.addEventListener("click", ev => {
       ev.preventDefault(); ev.stopPropagation(); hideHover(); openEditor(region.document);
+    });
+    layer.appendChild(el);
+  }
+
+  // summoned button for a token / tile / drawing the user can't open a HUD on
+  if ( summoned && !summoned.destroyed && summoned.document?.documentName !== "Region" ) {
+    const target = summoned;
+    const note = sharedFor(target.document) ?? privateFor(target.document);
+    const el = document.createElement("div");
+    el.className = `sn-region-btn${note ? " sn-has-note" : " sn-empty"}${sharedFor(target.document) ? " sn-shared" : ""}`;
+    el.style.setProperty("--sn-c", COLORS[note?.color] ?? COLORS.yellow);
+    el._snPos = () => {
+      const live = livePlaceable(target);
+      if ( live.destroyed ) return null;
+      const a = regionAnchor(live);
+      return a ? { x: a.x, y: a.y } : null;
+    };
+    el.title = game.i18n.localize(note ? "STICKYNOTES.Edit" : "STICKYNOTES.Add");
+    el.innerHTML = `<i class="fa-solid fa-note-sticky"></i>`;
+    el.addEventListener("click", ev => {
+      ev.preventDefault(); ev.stopPropagation(); hideHover(); setSummoned(null); openEditor(target.document);
     });
     layer.appendChild(el);
   }
@@ -992,8 +1034,8 @@ for ( const h of ["refreshRegion", "refreshToken", "refreshTile", "refreshDrawin
     repositionAll();
   });
 }
-Hooks.on("canvasReady", () => { hideHover(); activeRegionId = null; installRegionClickHandlers(); installPointerTracking(); refreshMarkers(); });
-Hooks.on("activateCanvasLayer", () => { hideHover(); activeRegionId = null; refreshMarkers(); });
+Hooks.on("canvasReady", () => { hideHover(); summoned = null; installRegionClickHandlers(); installPointerTracking(); refreshMarkers(); });
+Hooks.on("activateCanvasLayer", () => { hideHover(); summoned = null; refreshMarkers(); });
 Hooks.on("canvasTearDown", hideHover);
 
 // a shared note changing on another client must update this one live

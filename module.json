@@ -2,7 +2,7 @@
   "id": "sticky-notes",
   "title": "Sticky Notes",
   "description": "Sticky notes for Foundry: attach them to tokens, tiles, drawings or regions, or drop a standalone pin. Private or shared with the party. Hover to read.",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "compatibility": {
     "minimum": "13",
     "verified": "14.368"

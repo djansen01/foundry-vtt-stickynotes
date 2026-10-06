@@ -2,6 +2,15 @@
 
 All notable changes to this module. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.9.0]
+
+- **Players can now note NPC tokens.** Foundry only opens a Token HUD for the token's owner
+  (`_canHUD` requires ownership; tiles require a GM), so players right-clicking an NPC got no HUD
+  and never saw the sticky-note button. A right-click on anything that won't open a HUD now
+  summons the module's own small button beside it. Right-drag panning is unaffected.
+- Hover and right-click hit-testing ignore hidden tokens for non-GMs, so neither can reveal that
+  something hidden is there.
+
 ## [1.8.0]
 
 - Notes now appear on hover **regardless of which tool is selected**. Foundry only fires its

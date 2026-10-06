@@ -31,7 +31,7 @@ Then enable **Sticky Notes** under *Game Settings → Manage Modules*.
 
 | What | How |
 |---|---|
-| **Token** | Right-click it → sticky-note button at the bottom of the HUD's left column |
+| **Token** | Right-click it. If you own it, the button is at the bottom of the HUD's left column; if you don't (e.g. an NPC), a small sticky-note button appears beside it instead |
 | **Drawing** | Right-click it → same button |
 | **Tile** | Switch to the Tiles layer, right-click it |
 | **Region** | Right-click it to summon its button (Foundry defines no HUD for regions) |
